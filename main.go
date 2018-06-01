@@ -2,15 +2,20 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/alecthomas/template"
 	"github.com/blang/semver"
+	"github.com/docker/docker/client"
 	"github.com/srizzling/aquatic/version"
+	yaml "gopkg.in/yaml.v1"
 )
 
 type GitBranch struct {
@@ -30,13 +35,22 @@ type GitTag struct {
 	SemVer bool
 }
 
-type DockerTag struct {
+type AquaticTemplate struct {
+	Tag    *GitTag
+	Commit *GitCommit
+	Branch *GitBranch
+}
+
+type AquaticConfig struct {
+	TagFormat   []string `yaml:"tag_format"`
+	LabelFormat []string `yaml:"label_format"`
+	ImageNames  []string `yaml:"image_names"`
 }
 
 var (
 	versionFlag bool
-	image       string
-	imagePath   string
+	img         string
+	imgID       string
 )
 
 const banner = `
@@ -46,9 +60,9 @@ GitCommitSHA: %s
 `
 
 func init() {
-	flag.StringVar(&image, "img", "", "The image name of the docker image")
-	flag.StringVar(&imagePath, "imgPath", ".", "The path to the docker image (defaults to: .)")
+	flag.StringVar(&imgID, "imgID", "", "The Id of the image to tag")
 	flag.BoolVar(&versionFlag, "v", false, "print version and exit")
+
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(banner, version.Version, version.GitCommitSHA))
 		flag.PrintDefaults()
@@ -61,30 +75,53 @@ func init() {
 		os.Exit(0)
 	}
 
-	if image == "" {
-		usageAndExit("Image name cannot be empty", 1)
+	if imgID == "" {
+		usageAndExit("Image id cannot be empty", 1)
 	}
 }
 
 func main() {
-	tag, err := getTag()
+	config := AquaticConfig{}
+	data, err := ioutil.ReadFile(".aquatic.yml")
 	if err != nil {
 		panic(err)
 	}
 
-	commit, err := getCommit()
+	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		panic(err)
 	}
 
-	branch, err := getBranch()
+	tmplData, err := getGitInfo()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Tag: %s.%s.%s\n", tag.Major, tag.Minor, tag.Patch)
-	fmt.Printf("Branch: %s\n", branch.Name)
-	fmt.Printf("Commit: long:%s|short:%s\n", commit.LongHash, commit.ShortHash)
+	docker, err := client.NewEnvClient()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, name := range config.ImageNames {
+		err := setTag(name, tmplData, config.TagFormat, docker)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func setTag(name string, tmplData *AquaticTemplate, tagFormats []string, docker *client.Client) error {
+	for _, tagTemplate := range tagFormats {
+		t := template.Must(template.New("tag_template").Parse(tagTemplate))
+		buf := new(bytes.Buffer)
+		t.Execute(buf, tmplData)
+		err := docker.ImageTag(context.Background(), imgID, fmt.Sprintf("%s:%s", name, buf.String()))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
 }
 
 func runGit(args ...string) (string, error) {
@@ -97,6 +134,31 @@ func runGit(args ...string) (string, error) {
 		return "", errors.New(stderr.String())
 	}
 	return stdout.String(), nil
+}
+
+func getGitInfo() (*AquaticTemplate, error) {
+	tag, err := getTag()
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := getCommit()
+	if err != nil {
+		return nil, err
+	}
+
+	branch, err := getBranch()
+	if err != nil {
+		return nil, err
+	}
+
+	gitTmpl := &AquaticTemplate{
+		Tag:    tag,
+		Branch: branch,
+		Commit: commit,
+	}
+
+	return gitTmpl, nil
 }
 
 // getTag tries to imitate `git describe --tags` command to retreive the tag on the HEAD
