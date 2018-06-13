@@ -181,7 +181,7 @@ func getTag() (*GitTag, error) {
 		// well the tag isn't semver compliant.. so lets just return the raw value
 		return &GitTag{
 			Raw:    tag,
-			SemVer: true,
+			SemVer: false,
 		}, nil
 	}
 
