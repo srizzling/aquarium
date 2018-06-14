@@ -15,7 +15,7 @@ import (
 	"github.com/alecthomas/template"
 	"github.com/blang/semver"
 	"github.com/docker/docker/client"
-	"github.com/srizzling/aquatic/version"
+	"github.com/srizzling/aquarium/version"
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -56,7 +56,7 @@ var (
 )
 
 const banner = `
-aquatic - tag docker images with git metadata
+aquarium - tag docker images with git metadata
 Version: %s
 GitCommitSHA: %s
 
@@ -90,7 +90,7 @@ func init() {
 
 func main() {
 	config := AquaticConfig{}
-	data, err := ioutil.ReadFile(".aquatic.yml")
+	data, err := ioutil.ReadFile(".aquarium.yml")
 	if err != nil {
 		panic(err)
 	}

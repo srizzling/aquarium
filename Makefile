@@ -1,5 +1,5 @@
 GO_FILES := $(find . -iname '*.go' -type f | grep -v /vendor/)
-BINARY = aquatic
+BINARY = aquarium
 BUILD_DIR := "build"
 GOARCH = amd64
 
