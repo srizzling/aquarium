@@ -41,8 +41,7 @@ run: build
 
 lint:
 	@test -z $(gofmt -s -l $GO_FILES)
-	@go vet $(GO_FILES)
-	@golint -set_exit_status $(GO_FILES)
+	@golangci-lint run
 
 test:
 	@go test -v -race $(GO_FILES)
@@ -57,7 +56,6 @@ format:
 
 tools:
 	@go get -u github.com/golang/dep/cmd/dep
-	@go get -u github.com/golang/lint/golint
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/tebeka/go2xunit
 	@go get -u github.com/goreleaser/goreleaser
