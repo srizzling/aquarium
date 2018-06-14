@@ -36,13 +36,13 @@ type GitTag struct {
 	SemVer bool
 }
 
-type AquaticTemplate struct {
+type AquariumTemplate struct {
 	Tag    *GitTag
 	Commit *GitCommit
 	Branch *GitBranch
 }
 
-type AquaticConfig struct {
+type AquariumConfig struct {
 	TagFormat   []string `yaml:"tag_format"`
 	LabelFormat []string `yaml:"label_format"`
 	ImageNames  []string `yaml:"image_names"`
@@ -89,7 +89,7 @@ func init() {
 }
 
 func main() {
-	config := AquaticConfig{}
+	config := AquariumConfig{}
 	data, err := ioutil.ReadFile(".aquarium.yml")
 	if err != nil {
 		panic(err)
@@ -141,7 +141,7 @@ func printImgs(taggedImgs []string) {
 	}
 }
 
-func setTag(name string, tmplData *AquaticTemplate, tagFormats []string, docker *client.Client) (images []string, err error) {
+func setTag(name string, tmplData *AquariumTemplate, tagFormats []string, docker *client.Client) (images []string, err error) {
 	for _, tagTemplate := range tagFormats {
 		t := template.Must(template.New("tag_template").Parse(tagTemplate))
 		buf := new(bytes.Buffer)
@@ -169,7 +169,7 @@ func runGit(args ...string) (string, error) {
 	return stdout.String(), nil
 }
 
-func getGitInfo() (*AquaticTemplate, error) {
+func getGitInfo() (*AquariumTemplate, error) {
 	tag, err := getTag()
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func getGitInfo() (*AquaticTemplate, error) {
 		return nil, err
 	}
 
-	gitTmpl := &AquaticTemplate{
+	gitTmpl := &AquariumTemplate{
 		Tag:    tag,
 		Branch: branch,
 		Commit: commit,
