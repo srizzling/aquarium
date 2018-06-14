@@ -111,10 +111,11 @@ func main() {
 
 	var taggedImgs []string
 	for _, name := range config.ImageNames {
-		taggedImgs, err = setTag(name, tmplData, config.TagFormat, docker)
+		dockerTags, err := setTag(name, tmplData, config.TagFormat, docker)
 		if err != nil {
 			panic(err)
 		}
+		taggedImgs = append(taggedImgs, dockerTags...)
 	}
 
 	printImgs(taggedImgs)
