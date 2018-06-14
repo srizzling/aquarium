@@ -51,7 +51,6 @@ type aqConfig struct {
 var (
 	versionFlag  bool
 	outputFormat string
-	img          string
 	imgID        string
 )
 
@@ -145,7 +144,11 @@ func setTag(name string, tmplData *aqTemplate, tagFormats []string, docker *clie
 	for _, tagTemplate := range tagFormats {
 		t := template.Must(template.New("tag_template").Parse(tagTemplate))
 		buf := new(bytes.Buffer)
-		t.Execute(buf, tmplData)
+		err := t.Execute(buf, tmplData)
+		if err != nil {
+			return nil, err
+		}
+
 		imgName := fmt.Sprintf("%s:%s", name, buf.String())
 		err = docker.ImageTag(context.Background(), imgID, imgName)
 		if err != nil {
@@ -203,11 +206,8 @@ func getTag() (*gitTag, error) {
 	tag := strings.TrimSpace(raw)
 
 	// Check if tag is semver compliant
-	// does the tag start with v? strip it since it not actually semver complaint
-	if strings.HasPrefix(tag, "v") {
-		// strip the v from the tag
-		tag = tag[1:]
-	}
+	// does the tag start with v? strip it
+	strings.TrimPrefix(tag, "v")
 
 	v, err := semver.Make(tag)
 	if err != nil {
