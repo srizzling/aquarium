@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -48,19 +49,22 @@ type AquaticConfig struct {
 }
 
 var (
-	versionFlag bool
-	img         string
-	imgID       string
+	versionFlag  bool
+	outputFormat string
+	img          string
+	imgID        string
 )
 
 const banner = `
 aquatic - tag docker images with git metadata
 Version: %s
 GitCommitSHA: %s
+
 `
 
 func init() {
 	flag.StringVar(&imgID, "imgID", "", "The Id of the image to tag")
+	flag.StringVar(&outputFormat, "output", "json", "The formatting style for the command output allowed values: [json, text]")
 	flag.BoolVar(&versionFlag, "v", false, "print version and exit")
 
 	flag.Usage = func() {
@@ -77,6 +81,10 @@ func init() {
 
 	if imgID == "" {
 		usageAndExit("Image id cannot be empty", 1)
+	}
+
+	if outputFormat != "json" && outputFormat != "text" {
+		usageAndExit("OutputFormat not accepte	d", 1)
 	}
 }
 
@@ -102,25 +110,50 @@ func main() {
 		panic(err)
 	}
 
+	var taggedImgs []string
 	for _, name := range config.ImageNames {
-		err := setTag(name, tmplData, config.TagFormat, docker)
+		taggedImgs, err = setTag(name, tmplData, config.TagFormat, docker)
 		if err != nil {
 			panic(err)
 		}
 	}
+
+	printImgs(taggedImgs)
 }
 
-func setTag(name string, tmplData *AquaticTemplate, tagFormats []string, docker *client.Client) error {
+func printImgs(taggedImgs []string) {
+	if outputFormat == "text" {
+		for _, img := range taggedImgs {
+			fmt.Printf("%s\n", img)
+		}
+	} else if outputFormat == "json" {
+		var jsonReturn = struct {
+			Images []string `json:"images"`
+		}{
+			taggedImgs,
+		}
+
+		json, err := json.Marshal(jsonReturn)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s", json)
+	}
+}
+
+func setTag(name string, tmplData *AquaticTemplate, tagFormats []string, docker *client.Client) (images []string, err error) {
 	for _, tagTemplate := range tagFormats {
 		t := template.Must(template.New("tag_template").Parse(tagTemplate))
 		buf := new(bytes.Buffer)
 		t.Execute(buf, tmplData)
-		err := docker.ImageTag(context.Background(), imgID, fmt.Sprintf("%s:%s", name, buf.String()))
+		imgName := fmt.Sprintf("%s:%s", name, buf.String())
+		err = docker.ImageTag(context.Background(), imgID, imgName)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		images = append(images, imgName)
 	}
-	return nil
+	return images, nil
 
 }
 
