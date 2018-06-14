@@ -42,7 +42,6 @@ run: build
 lint:
 	@test -z $(gofmt -s -l $GO_FILES)
 	@go vet $(GO_FILES)
-	@megacheck $(GO_FILES)
 	@golint -set_exit_status $(GO_FILES)
 
 test:
@@ -59,10 +58,10 @@ format:
 tools:
 	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u github.com/golang/lint/golint
-	@go get -u github.com/golangci/golangci-lint
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/tebeka/go2xunit
 	@go get -u github.com/goreleaser/goreleaser
+	@go install ./vendor/github.com/golangci/golangci-lint/cmd/golangci-lint/
 
 deps:
 	@dep ensure

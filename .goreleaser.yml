@@ -1,0 +1,16 @@
+builds:
+  - binary: aquatic
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+dockers:
+- image: quay.io/srizzling/aquatic
+  tag_templates:
+  - '{{ .Tag }}'
+  - 'v{{ .Major }}.{{ .Minor }}'
+  - 'latest'
