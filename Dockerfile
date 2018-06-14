@@ -1,2 +1,4 @@
-from scratch
-COPY test test
+FROM alpine:3.7
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+COPY aquarium /aquarium
+ENTRYPOINT ["/aquarium"]
