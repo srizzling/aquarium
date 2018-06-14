@@ -24,6 +24,10 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = [
+  "github.com/golangci/golangci-lint/cmd/golangci-lint",
+]
+
 [[constraint]]
   branch = "master"
   name = "github.com/alecthomas/template"
@@ -43,3 +47,7 @@
 [[constraint]]
   name = "github.com/docker/docker"
   version = "1.13.1"
+
+[[constraint]]
+  name = "github.com/golangci/golangci-lint"
+  version = "1.6.1"
