@@ -59,7 +59,7 @@ format:
 tools:
 	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u github.com/golang/lint/golint
-	@go get -u honnef.co/go/tools/cmd/megacheck
+	@go get -u github.com/golangci/golangci-lint
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/tebeka/go2xunit
 	@go get -u github.com/goreleaser/goreleaser
