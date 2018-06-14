@@ -207,7 +207,7 @@ func getTag() (*gitTag, error) {
 
 	// Check if tag is semver compliant
 	// does the tag start with v? strip it
-	tag := strings.TrimPrefix(tag, "v")
+	tag = strings.TrimPrefix(tag, "v")
 
 	v, err := semver.Make(tag)
 	if err != nil {
