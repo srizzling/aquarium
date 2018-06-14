@@ -19,16 +19,16 @@ import (
 	yaml "gopkg.in/yaml.v1"
 )
 
-type GitBranch struct {
+type gitBranch struct {
 	Name string
 }
 
-type GitCommit struct {
+type gitCommit struct {
 	ShortHash string
 	LongHash  string
 }
 
-type GitTag struct {
+type gitTag struct {
 	Major  string
 	Minor  string
 	Patch  string
@@ -36,13 +36,13 @@ type GitTag struct {
 	SemVer bool
 }
 
-type AquariumTemplate struct {
-	Tag    *GitTag
-	Commit *GitCommit
-	Branch *GitBranch
+type aqTemplate struct {
+	Tag    *gitTag
+	Commit *gitCommit
+	Branch *gitBranch
 }
 
-type AquariumConfig struct {
+type aqConfig struct {
 	TagFormat   []string `yaml:"tag_format"`
 	LabelFormat []string `yaml:"label_format"`
 	ImageNames  []string `yaml:"image_names"`
@@ -58,7 +58,7 @@ var (
 const banner = `
 aquarium - tag docker images with git metadata
 Version: %s
-GitCommitSHA: %s
+gitCommitSHA: %s
 
 `
 
@@ -75,7 +75,7 @@ func init() {
 	flag.Parse()
 
 	if versionFlag {
-		fmt.Printf(banner, version.Version, version.GitCommitSHA)
+		fmt.Printf(banner, version.Version, version.gitCommitSHA)
 		os.Exit(0)
 	}
 
@@ -89,7 +89,7 @@ func init() {
 }
 
 func main() {
-	config := AquariumConfig{}
+	config := aqConfig{}
 	data, err := ioutil.ReadFile(".aquarium.yml")
 	if err != nil {
 		panic(err)
@@ -141,7 +141,7 @@ func printImgs(taggedImgs []string) {
 	}
 }
 
-func setTag(name string, tmplData *AquariumTemplate, tagFormats []string, docker *client.Client) (images []string, err error) {
+func setTag(name string, tmplData *aqTemplate, tagFormats []string, docker *client.Client) (images []string, err error) {
 	for _, tagTemplate := range tagFormats {
 		t := template.Must(template.New("tag_template").Parse(tagTemplate))
 		buf := new(bytes.Buffer)
@@ -169,7 +169,7 @@ func runGit(args ...string) (string, error) {
 	return stdout.String(), nil
 }
 
-func getGitInfo() (*AquariumTemplate, error) {
+func getGitInfo() (*aqTemplate, error) {
 	tag, err := getTag()
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func getGitInfo() (*AquariumTemplate, error) {
 		return nil, err
 	}
 
-	gitTmpl := &AquariumTemplate{
+	gitTmpl := &aqTemplate{
 		Tag:    tag,
 		Branch: branch,
 		Commit: commit,
@@ -195,7 +195,7 @@ func getGitInfo() (*AquariumTemplate, error) {
 }
 
 // getTag tries to imitate `git describe --tags` command to retreive the tag on the HEAD
-func getTag() (*GitTag, error) {
+func getTag() (*gitTag, error) {
 	raw, err := runGit("describe", "--tags", "--abbrev=0")
 	if err != nil {
 		return nil, err
@@ -212,7 +212,7 @@ func getTag() (*GitTag, error) {
 	v, err := semver.Make(tag)
 	if err != nil {
 		// well the tag isn't semver compliant.. so lets just return the raw value
-		return &GitTag{
+		return &gitTag{
 			Raw:    tag,
 			SemVer: false,
 		}, nil
@@ -220,7 +220,7 @@ func getTag() (*GitTag, error) {
 
 	// unfourently git describe doesn't return a semver compliant tag
 	// so lets just move it to build information
-	return &GitTag{
+	return &gitTag{
 		Major:  fmt.Sprint(v.Major),
 		Minor:  fmt.Sprint(v.Minor),
 		Patch:  fmt.Sprint(v.Patch),
@@ -229,7 +229,7 @@ func getTag() (*GitTag, error) {
 	}, nil
 }
 
-func getCommit() (*GitCommit, error) {
+func getCommit() (*gitCommit, error) {
 	longHash, err := runGit("rev-parse", "HEAD")
 	if err != nil {
 		return nil, err
@@ -240,18 +240,18 @@ func getCommit() (*GitCommit, error) {
 		return nil, err
 	}
 
-	return &GitCommit{
+	return &gitCommit{
 		LongHash:  strings.TrimSpace(longHash),
 		ShortHash: strings.TrimSpace(shortHash),
 	}, nil
 }
 
-func getBranch() (*GitBranch, error) {
+func getBranch() (*gitBranch, error) {
 	name, err := runGit("rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return nil, err
 	}
-	return &GitBranch{
+	return &gitBranch{
 		Name: strings.TrimSpace(name),
 	}, nil
 }
