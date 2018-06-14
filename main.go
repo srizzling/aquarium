@@ -58,7 +58,7 @@ var (
 const banner = `
 aquarium - tag docker images with git metadata
 Version: %s
-gitCommitSHA: %s
+GitCommitSHA: %s
 
 `
 
@@ -75,7 +75,7 @@ func init() {
 	flag.Parse()
 
 	if versionFlag {
-		fmt.Printf(banner, version.Version, version.gitCommitSHA)
+		fmt.Printf(banner, version.Version, version.GitCommitSHA)
 		os.Exit(0)
 	}
 
